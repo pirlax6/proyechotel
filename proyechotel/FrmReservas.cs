@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MySql.Data.MySqlClient;
+using proyectohotel;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -12,11 +14,42 @@ namespace proyechotel
 {
     public partial class FrmReservas : Form
     {
+        int idReserva = 0;
         public FrmReservas()
         {
             InitializeComponent();
         }
+        public void MostrarReservas()
+        {
+            try
+            {
+                if (Conexion.conexion.State == System.Data.ConnectionState.Open)
+                {
+                    Conexion.conexion.Close();
+                }
 
+                Conexion.conexion.Open();
+
+                string consulta = "SELECT * FROM reservas";
+
+                MySqlDataAdapter adaptador = new MySqlDataAdapter(
+                    consulta,
+                    Conexion.conexion
+                );
+
+                DataTable tabla = new DataTable();
+
+                adaptador.Fill(tabla);
+
+                dgvReservas.DataSource = tabla;
+
+                Conexion.conexion.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
         private void FrmReservas_Load(object sender, EventArgs e)
         {
             cbClientes.Items.Add("Carlos Pérez");
@@ -30,32 +63,61 @@ namespace proyechotel
 
         private void dgvReservas_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
+            if (dgvReservas.CurrentRow.Cells[1].Value != null)
+            {
+                idReserva = Convert.ToInt32(
+                    dgvReservas.CurrentRow.Cells[0].Value
+                );
 
+                cbClientes.Text =
+                    dgvReservas.CurrentRow.Cells[1].Value.ToString();
+
+                cbHabitaciones.Text =
+                    dgvReservas.CurrentRow.Cells[2].Value.ToString();
+
+                dtEntrada.Value = Convert.ToDateTime(
+                    dgvReservas.CurrentRow.Cells[3].Value
+                );
+
+                dtSalida.Value = Convert.ToDateTime(
+                    dgvReservas.CurrentRow.Cells[4].Value
+                );
+            }
         }
 
         private void btnGuardar_Click(object sender, EventArgs e)
         {
-            dgvReservas.Rows.Add(
-          cbClientes.Text,
-          cbHabitaciones.Text,
-          dtEntrada.Text,
-          dtSalida.Text
-      );
+            try
+            {
+                if (Conexion.conexion.State == System.Data.ConnectionState.Open)
+                {
+                    Conexion.conexion.Close();
+                }
 
-            MessageBox.Show("Reserva agregada");
+                Conexion.conexion.Open();
 
-            cbClientes.SelectedItem = null;
-            cbHabitaciones.SelectedItem = null;
+                string consulta = "INSERT INTO reservas(cliente, habitacion, fechaEntrada, fechaSalida) VALUES (@cliente,@habitacion,@entrada,@salida)";
 
-            cbClientes.ResetText();
-            cbHabitaciones.ResetText();
+                MySqlCommand comando = new MySqlCommand(consulta, Conexion.conexion);
 
-            dtEntrada.Value = DateTime.Now;
-            dtSalida.Value = DateTime.Now;
+                comando.Parameters.AddWithValue("@cliente", cbClientes.Text);
+                comando.Parameters.AddWithValue("@habitacion", cbHabitaciones.Text);
+                comando.Parameters.AddWithValue("@entrada", dtEntrada.Value);
+                comando.Parameters.AddWithValue("@salida", dtSalida.Value);
 
- 
+                comando.ExecuteNonQuery();
+
+                MessageBox.Show("Reserva guardada");
+
+                Conexion.conexion.Close();
+
+                MostrarReservas();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
-
         private void btnLimpiar_Click(object sender, EventArgs e)
         {
             cbClientes.SelectedIndex = -1;
@@ -64,13 +126,35 @@ namespace proyechotel
 
         private void btnEliminar_Click(object sender, EventArgs e)
         {
-            if (dgvReservas.SelectedRows.Count > 0)
+            try
             {
-                dgvReservas.Rows.RemoveAt(
-                    dgvReservas.SelectedRows[0].Index
+                if (Conexion.conexion.State == System.Data.ConnectionState.Open)
+                {
+                    Conexion.conexion.Close();
+                }
+
+                Conexion.conexion.Open();
+
+                string consulta = "DELETE FROM reservas WHERE idReserva=@id";
+
+                MySqlCommand comando = new MySqlCommand(
+                    consulta,
+                    Conexion.conexion
                 );
 
+                comando.Parameters.AddWithValue("@id", idReserva);
+
+                comando.ExecuteNonQuery();
+
                 MessageBox.Show("Reserva eliminada");
+
+                Conexion.conexion.Close();
+
+                MostrarReservas();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
             }
         }
 

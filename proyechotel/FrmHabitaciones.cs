@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MySql.Data.MySqlClient;
+using proyectohotel;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -16,35 +18,74 @@ namespace proyechotel
         {
             InitializeComponent();
         }
+        public void MostrarHabitaciones()
+        {
+            try
+            {
+                if (Conexion.conexion.State == System.Data.ConnectionState.Open)
+                {
+                    Conexion.conexion.Close();
+                }
 
+                Conexion.conexion.Open();
+
+                string consulta = "SELECT * FROM habitaciones";
+
+                MySqlDataAdapter adaptador = new MySqlDataAdapter(
+                    consulta,
+                    Conexion.conexion
+                );
+
+                DataTable tabla = new DataTable();
+
+                adaptador.Fill(tabla);
+
+                dgvHabitaciones.DataSource = tabla;
+
+                Conexion.conexion.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
         private void FrmHabitaciones_Load(object sender, EventArgs e)
         {
+            MostrarHabitaciones();
 
         }
 
         private void btnGuardar_Click(object sender, EventArgs e)
         {
-            dgvHabitaciones.Rows.Add(
-        txtNumero.Text,
-        txtTipo.Text,
-        txtPrecio.Text,
-        txtEstado.Text
-    );
+            try
+            {
+                if (Conexion.conexion.State == System.Data.ConnectionState.Open)
+                {
+                    Conexion.conexion.Close();
+                }
 
-            MessageBox.Show("Habitación agregada");
+                Conexion.conexion.Open();
 
-            txtNumero.Clear();
-            txtTipo.Clear();
-            txtPrecio.Clear();
-            txtEstado.Clear();
-        }
+                string consulta = "INSERT INTO habitaciones(numero, tipo, precio, estado) VALUES (@numero,@tipo,@precio,@estado)";
 
-        private void btnLimpiar_Click(object sender, EventArgs e)
-        {
-            txtNumero.Clear();
-            txtTipo.Clear();
-            txtPrecio.Clear();
-            txtEstado.Clear();
+                MySqlCommand comando = new MySqlCommand(consulta, Conexion.conexion);
+
+                comando.Parameters.AddWithValue("@numero", txtNumero.Text);
+                comando.Parameters.AddWithValue("@tipo",   txtTipo.Text);
+                comando.Parameters.AddWithValue("@precio", txtPrecio.Text);
+                comando.Parameters.AddWithValue("@estado", txtEstado.Text);
+
+                comando.ExecuteNonQuery();
+
+                MessageBox.Show("Habitación guardada");
+
+                Conexion.conexion.Close();
+                MostrarHabitaciones();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         private void btnEliminar_Click(object sender, EventArgs e)
